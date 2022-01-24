@@ -9,7 +9,8 @@ OBJETIVO
 Desarrollar una interfaz con VueJs que permita correr una carrera de bots visible sobre un mapa de Google Maps.
 
 
-La competencia consiste en que el usuario indica un punto sobre el mapa al que todos los bots deben acercarse en línea recta cambiando su posición cada 1 segundo. Los bots se encuentran ubicados de manera aleatoria en la ciudad donde vives.
+La competencia consiste en que el usuario indica un punto sobre el mapa al que todos los bots deben acercarse en línea recta cambiando su posición cada 1 segundo.
+Los bots se encuentran ubicados de manera aleatoria en la ciudad donde vives.
 
 
 Debes cumplir con cada uno de los siguientes puntos:
