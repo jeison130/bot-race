@@ -9,7 +9,7 @@ const getCurrentPositionService = new GetCurrentPositionService();
 const getDistanceBetweenPointsService = new GetDistanceBetweenPointsService();
 
 let googleMaps: google;
-let map = null;
+let map: any = null;
 let finishLineMarker = null;
 
 const center = {
@@ -19,10 +19,14 @@ const center = {
 let finishLinePosition = {
   ...center,
 };
+let finishLineCircle: any = null;
+
+const botMarkers = [];
+const minInitialBot = 5;
+const maxInitialBot = 10;
+const minDistanceForRace = 1000;
 
 onMounted(async () => {
-
-
   try {
     const position = await getCurrentPositionService.run();
     const cords = position.coords;
@@ -39,7 +43,7 @@ onMounted(async () => {
 
   map = new googleMaps.maps.Map(document.getElementById('map') as HTMLElement, {
     center,
-    zoom: 14,
+    zoom: 13,
   });
 
   finishLineMarker = new googleMaps.maps.Marker({
@@ -51,13 +55,73 @@ onMounted(async () => {
 
   finishLineMarker.addListener('dragend', changePositionFinishLine);
   finishLinePosition = {...center};
+
+  finishLineCircle = new googleMaps.maps.Circle({
+    strokeColor: '#FF0000',
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: '#FF0000',
+    fillOpacity: 0.25,
+    map,
+    center: finishLinePosition,
+    radius: 2450,
+    editable: true,
+  });
+
+  setTimeout(() => {
+    generateBotMarkers();
+  }, 100);
 });
+
+function randomIntFromInterval(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+function generateBotMarkers() {
+  const numberBots = randomIntFromInterval(minInitialBot, maxInitialBot);
+
+  for (let i = 0; i < numberBots; i++) {
+    const position = generatePositionIntoCircle();
+
+    botMarkers[i] = new googleMaps.maps.Marker({
+      map: map,
+      position,
+    });
+  }
+}
+
+function generatePositionIntoCircle() {
+  let point = null;
+
+  while (!point) {
+    const bounds = finishLineCircle.getBounds();
+    map.fitBounds(bounds);
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+
+    const ptLat = Math.random() * (ne.lat() - sw.lat()) + sw.lat();
+    const ptLng = Math.random() * (ne.lng() - sw.lng()) + sw.lng();
+    const newPoint = new googleMaps.maps.LatLng(ptLat, ptLng);
+
+    let allowDistance = true;
+
+    if (getDistanceBetweenPointsService.run(newPoint.lat(), newPoint.lng(), finishLinePosition.lat, finishLinePosition.lng) < minDistanceForRace) {
+      allowDistance = false;
+    }
+
+    if (googleMaps.maps.geometry.spherical.computeDistanceBetween(newPoint, finishLineCircle.getCenter()) < finishLineCircle.getRadius() && allowDistance) {
+      point = newPoint;
+    }
+  }
+
+  return point;
+}
 
 function changePositionFinishLine($event: any) {
   finishLinePosition.lat = $event.latLng.lat();
   finishLinePosition.lng = $event.latLng.lng();
 
-  console.log(getDistanceBetweenPointsService.run(finishLinePosition.lat, finishLinePosition.lng, center.lat, center.lng));
+  finishLineCircle.setCenter(new googleMaps.maps.LatLng(finishLinePosition.lat, finishLinePosition.lng));
 }
 
 
@@ -67,9 +131,12 @@ function changePositionFinishLine($event: any) {
   <div>
     Prueba
   </div>
-  <div id="map" style="width: 100%; height: calc(100vh - 100px)"></div>
+  <div id="map"></div>
 </template>
 
 <style>
-
+#map {
+  width: 100%;
+  height: calc(100vh - 100px)
+}
 </style>
