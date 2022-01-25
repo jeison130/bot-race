@@ -37,7 +37,8 @@ onMounted(async () => {
   }
 
   const options: LoaderOptions = {};
-  const loader = new Loader('AIzaSyBhrFU_TViLuyhGwB78PBujTdXM1waidNc', options);
+
+  const loader = new Loader(import.meta.env.VITE_GOOGLE_MAPS as string, options);
 
   googleMaps = await loader.load();
 
@@ -121,7 +122,10 @@ function changePositionFinishLine($event: any) {
   finishLinePosition.lat = $event.latLng.lat();
   finishLinePosition.lng = $event.latLng.lng();
 
-  finishLineCircle.setCenter(new googleMaps.maps.LatLng(finishLinePosition.lat, finishLinePosition.lng));
+  const position = new googleMaps.maps.LatLng(finishLinePosition.lat, finishLinePosition.lng);
+
+  finishLineCircle.setCenter(position);
+  map.setCenter(position);
 }
 
 
