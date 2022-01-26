@@ -16,8 +16,8 @@ const getRandomIntFromIntervalService = new GetRandomIntFromIntervalService();
 let googleMaps: google;
 let map: any = null;
 let finishLineMarker = null;
-const minInitialBot = 5;
-const maxInitialBot = 10;
+const minInitialBot = 3;
+const maxInitialBot = 5;
 const minDistanceForRace = 1000;
 const minDistanceTraveled = 50;
 const maxDistanceTraveled = 100;
@@ -85,7 +85,6 @@ onMounted(async () => {
 
 function moveBots() {
   setInterval(() => {
-    console.log('iniciando a mover');
     bots.forEach((bot) => {
       const {marker, distance} = bot;
 
@@ -94,7 +93,15 @@ function moveBots() {
         lng: marker.position.lng(),
       };
       const end = finishLinePosition;
-      const randomDistance = getRandomIntFromIntervalService.run(minDistanceTraveled, maxDistanceTraveled);
+
+      let randomDistance = getRandomIntFromIntervalService.run(minDistanceTraveled, maxDistanceTraveled);
+
+      if (distance < randomDistance) {
+        marker.setPosition(new googleMaps.maps.LatLng(end.lat, end.lng));
+        bot.distance = 0;
+        return;
+      }
+
       const n = distance / randomDistance;
 
       let lat: number;
@@ -122,8 +129,6 @@ function moveBots() {
 
     });
     recalculatePositions();
-
-    console.log('Terminando de mover');
   }, 1000);
 }
 
