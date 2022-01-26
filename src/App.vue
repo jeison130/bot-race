@@ -3,7 +3,8 @@
 import faker from 'faker';
 import {Loader, LoaderOptions, google} from 'google-maps';
 import {onMounted, reactive, ref} from 'vue';
-import finishLineImage from './assets/finishLine.png';
+import finishLineImage from './assets/finish-line.png';
+import checkeredFlag from './assets/checkered-flag.gif';
 import {GetCurrentPositionService} from './services/getCurrentPosition.service';
 import {GetDistanceBetweenPointsService} from './services/getDistanceBetweenPoints.service';
 import {GetRandomIntFromIntervalService} from './services/getRandomIntFromInterval.service';
@@ -37,8 +38,13 @@ let finishLinePosition = {
 };
 let finishLineCircle: any = null;
 
+let intevelMoveBots: any = null;
 let bots: BotModel[] = reactive([]);
 let loadingMap = ref(true);
+let raceHasStared = ref(false);
+let raceIsOver = ref(false);
+let counterInitRace = ref(3);
+let startingRace = ref(false);
 
 onMounted(async () => {
   try {
@@ -85,18 +91,49 @@ onMounted(async () => {
 
   setTimeout(() => {
     loadingMap.value = false;
-    generateBotMarkers();
-    recalculatePositions();
-    moveBots();
   }, 100);
 });
 
+function startRace() {
+  startingRace.value = true;
+  if (counterInitRace.value === 0) {
+    startingRace.value = false;
+    generateBotMarkers();
+    raceHasStared.value = true;
+    recalculatePositions();
+    moveBots();
+  } else {
+    setTimeout(() => {
+      counterInitRace.value -= 1;
+      startRace();
+    }, 1000);
+  }
+}
+
+function restartingRace() {
+  window.clearInterval(intevelMoveBots);
+  bots.forEach((bot) => {
+    bot.marker.setMap(null);
+    bot.marker.setPosition(null);
+    bot.marker.setVisible(false);
+    bot.marker = null;
+  });
+
+  bots.splice(0, bots.length);
+
+  startRace();
+}
+
 function moveBots() {
-  setInterval(() => {
+  intevelMoveBots = setInterval(() => {
+    let countDistanceZero = 0;
     bots.forEach((bot) => {
       const {marker, distance} = bot;
 
-      if (distance === 0) return;
+      if (distance === 0) {
+        countDistanceZero += 1;
+        return;
+      }
 
       const start = {
         lat: marker.position.lat(),
@@ -156,6 +193,11 @@ function moveBots() {
       );
 
     });
+
+    if (countDistanceZero === bots.length) {
+      raceIsOver.value = true;
+    }
+
     recalculatePositions();
   }, 1000);
 }
@@ -262,31 +304,56 @@ function changePositionFinishLine($event: any) {
     <div class="drawer-side">
       <label for="my-drawer-2" class="drawer-overlay"></label>
 
-      <div class="flex flex-col gap-2 p-3 md:p-4 overflow-y-auto bg-base-100">
+      <div class="overflow-y-auto bg-base-100 drawer-rigth">
+        <div v-if="!raceHasStared" class="flex flex-col gap-2 p-3 md:p-4 h-full">
+          <h1 class="text-2xl font-bold text-center">Bienvenidos a la carrera de bots</h1>
+          <p class="text-xl font-extralight">
+            Para iniciar la carrera, mueva el puntero <img :src="finishLineImage" class="inline w-6"> para indicar la
+            linea de meta, la cual deberan llegar los bots
+          </p>
 
-        <div class="flex flex-row justify-between items-center">
-          <h1 class="text-xl font-bold text-center">
-            Estadísticas de la carrera
-          </h1>
+          <button class="btn bg-neutral mt-2" :disabled="loadingMap || startingRace" @click="startRace">
+            Iniciar la carrera
+          </button>
 
-          <label for="my-drawer-2" class="mb-4 btn btn-ghost btn-square drawer-button lg:hidden">
-            <svg class="inline-block w-6 h-6 stroke-current" viewBox="0 0 20 20">
-              <path fill="none"
-                    d="M15.898,4.045c-0.271-0.272-0.713-0.272-0.986,0l-4.71,4.711L5.493,4.045c-0.272-0.272-0.714-0.272-0.986,0s-0.272,0.714,0,0.986l4.709,4.711l-4.71,4.711c-0.272,0.271-0.272,0.713,0,0.986c0.136,0.136,0.314,0.203,0.492,0.203c0.179,0,0.357-0.067,0.493-0.203l4.711-4.711l4.71,4.711c0.137,0.136,0.314,0.203,0.494,0.203c0.178,0,0.355-0.067,0.492-0.203c0.273-0.273,0.273-0.715,0-0.986l-4.711-4.711l4.711-4.711C16.172,4.759,16.172,4.317,15.898,4.045z"></path>
-            </svg>
-          </label>
+          <div v-if="startingRace" class="flex flex-col justify-center items-center text-2xl h-full">
+            <span class="">
+              Iniciando la carrera
+            </span>
+            <span class="countdown font-bold">
+              <span :style="{'--value':counterInitRace}"></span>
+            </span>
+          </div>
         </div>
 
-        <button class="btn bg-neutral" @click="addBot">
-          Agregar Bot
-        </button>
+        <div v-else class="flex flex-col gap-2 p-3 md:p-4">
+          <div class="flex flex-row justify-between items-center">
+            <h1 class="text-2xl font-bold text-center">
+              Estadísticas de la carrera
+            </h1>
 
-        <ul class="flex flex-col gap-2 pl-0">
-          <li v-for="(bot, index) in bots" class="flex flex-col border-b py-4 gap-2 relative">
-            <div v-if="bot.battery === 0" class="absolute left-0 right-0 ml-auto mr-auto w-48 h-10 font-bold text-xl">
-              Regarcando {{ bot.batteryRecoveryTime + 1 }}
-            </div>
-            <div :class="{
+            <label for="my-drawer-2" class="mb-4 btn btn-ghost btn-square drawer-button lg:hidden">
+              <svg class="inline-block w-6 h-6 stroke-current" viewBox="0 0 20 20">
+                <path fill="none"
+                      d="M15.898,4.045c-0.271-0.272-0.713-0.272-0.986,0l-4.71,4.711L5.493,4.045c-0.272-0.272-0.714-0.272-0.986,0s-0.272,0.714,0,0.986l4.709,4.711l-4.71,4.711c-0.272,0.271-0.272,0.713,0,0.986c0.136,0.136,0.314,0.203,0.492,0.203c0.179,0,0.357-0.067,0.493-0.203l4.711-4.711l4.71,4.711c0.137,0.136,0.314,0.203,0.494,0.203c0.178,0,0.355-0.067,0.492-0.203c0.273-0.273,0.273-0.715,0-0.986l-4.711-4.711l4.711-4.711C16.172,4.759,16.172,4.317,15.898,4.045z"></path>
+              </svg>
+            </label>
+          </div>
+
+          <button v-if="!raceIsOver" class="btn bg-neutral" @click="addBot">
+            Agregar Bot
+          </button>
+
+          <button v-else class="btn bg-neutral" @click="restartingRace">
+            Iniciar nueva carrera
+          </button>
+
+          <ul class="flex flex-col gap-2 pl-0">
+            <li v-for="(bot, index) in bots" class="flex flex-col border-b py-4 gap-2 relative">
+              <div v-if="bot.battery === 0" class="absolute left-0 right-0 ml-auto mr-auto w-48 h-10 font-bold text-xl">
+                Regarcando {{ bot.batteryRecoveryTime + 1 }}
+              </div>
+              <div :class="{
             'flex':true,
              'gap-4': true,
              'justify-between': true,
@@ -294,6 +361,7 @@ function changePositionFinishLine($event: any) {
              'opacity-25': bot.battery == 0,
           }">
             <span
+                v-if="bot.distance > 0"
                 :class="{
             flex: true,
             'items-center': true,
@@ -307,29 +375,31 @@ function changePositionFinishLine($event: any) {
             'bg-success': index === 0,
             'bg-warning': index !== 0 && index !== (bots.length - 1),
           }">
-            {{ index + 1 }}
+              {{ index + 1 }}
           </span>
+                <img v-else class="w-14" :src="checkeredFlag">
 
-              <div class="flex flex-col">
+                <div class="flex flex-col">
             <span class="text-xl">
               {{ bot.name.split(' ')[0] }}
             </span>
-                <span class="text-2xl font-bold">{{ bot.name.split(' ')[1] }}</span>
-              </div>
+                  <span class="text-2xl font-bold">{{ bot.name.split(' ')[1] }}</span>
+                </div>
 
-              <div class="flex flex-col text-right">
+                <div class="flex flex-col text-right">
             <span class="text-xs">
               Distancia restante
             </span>
-                <span class="text-2xl font-bold">
+                  <span class="text-2xl font-bold">
               {{ Math.round(bot.distance) }} <span class="text-xs">mts</span>
             </span>
+                </div>
               </div>
-            </div>
 
-            <progress class="progress progress-primary" :value="bot.battery" :max="maxBattery"></progress>
-          </li>
-        </ul>
+              <progress class="progress progress-primary" :value="bot.battery" :max="maxBattery"></progress>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -348,6 +418,10 @@ function changePositionFinishLine($event: any) {
 .map {
   width: 100%;
   height: calc(100vh - var(--heigth-app-bar));
+}
+
+.drawer-rigth {
+  max-width: 25rem;
 }
 
 .spinner {
