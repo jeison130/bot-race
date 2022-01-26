@@ -17,6 +17,7 @@ import {
   minBatteryConsumption,
   minDistanceForRace,
   maxBattery,
+  batteryRecoveryTime,
 } from './constants';
 
 const getCurrentPositionService = new GetCurrentPositionService();
@@ -91,7 +92,9 @@ onMounted(async () => {
 function moveBots() {
   setInterval(() => {
     bots.forEach((bot) => {
-      const {marker, distance, battery} = bot;
+      const {marker, distance} = bot;
+
+      if (distance === 0) return;
 
       const start = {
         lat: marker.position.lat(),
@@ -111,8 +114,12 @@ function moveBots() {
       bot.battery -= batteryConsumption;
 
       // Check battery
-      if (bot.battery === 0) {
+      if (bot.battery === 0 && bot.batteryRecoveryTime > 0) {
+        bot.batteryRecoveryTime -= 1;
+        return;
+      } else if (bot.battery === 0 && bot.batteryRecoveryTime === 0) {
         bot.battery = maxBattery;
+        bot.batteryRecoveryTime = batteryRecoveryTime;
       }
 
       if (distance < randomDistance) {
@@ -177,6 +184,7 @@ function generateBotMarkers() {
         title: 'Bot ' + i + 1,
       }),
       battery: maxBattery,
+      batteryRecoveryTime,
     };
   }
 }
@@ -233,8 +241,17 @@ function changePositionFinishLine($event: any) {
       </h1>
 
       <ul class="flex flex-col gap-2">
-        <li v-for="(bot, index) in bots" class="flex flex-col border-b p-4 gap-2">
-          <div class="flex gap-4 justify-between">
+        <li v-for="(bot, index) in bots" class="flex flex-col border-b p-4 gap-2 relative">
+          <div v-if="bot.battery === 0" class="absolute left-0 right-0 ml-auto mr-auto w-48 h-10 font-bold text-xl">
+            Regarcando {{ bot.batteryRecoveryTime + 1 }}
+          </div>
+          <div :class="{
+            'flex':true,
+             'gap-4': true,
+             'justify-between': true,
+             'bg-black': bot.battery == 0,
+             'opacity-25': bot.battery == 0,
+          }">
             <span
                 :class="{
             flex: true,

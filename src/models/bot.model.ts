@@ -3,4 +3,5 @@ export interface BotModel {
     distance: number;
     name: string;
     battery: number;
+    batteryRecoveryTime: number;
 }
