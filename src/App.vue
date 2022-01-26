@@ -37,7 +37,7 @@ let finishLinePosition = {
 };
 let finishLineCircle: any = null;
 
-const bots: BotModel[] = reactive([]);
+let bots: BotModel[] = reactive([]);
 
 onMounted(async () => {
   try {
@@ -173,20 +173,25 @@ function generateBotMarkers() {
   const numberBots = getRandomIntFromIntervalService.run(minInitialBot, maxInitialBot);
 
   for (let i = 0; i < numberBots; i++) {
-    const position = generatePositionIntoCircle();
-
-    bots[i] = {
-      name: faker.name.findName(),
-      distance: getDistanceBetweenPointsService.run(finishLinePosition.lat, finishLinePosition.lng, position.lat(), position.lng()),
-      marker: new googleMaps.maps.Marker({
-        map: map,
-        position,
-        title: 'Bot ' + i + 1,
-      }),
-      battery: maxBattery,
-      batteryRecoveryTime,
-    };
+    addBot();
   }
+}
+
+function addBot() {
+  const position = generatePositionIntoCircle();
+  const fakerName = faker.name.findName();
+
+  bots.push({
+    name: fakerName,
+    distance: getDistanceBetweenPointsService.run(finishLinePosition.lat, finishLinePosition.lng, position.lat(), position.lng()),
+    marker: new googleMaps.maps.Marker({
+      map: map,
+      position,
+      title: fakerName,
+    }),
+    battery: maxBattery,
+    batteryRecoveryTime,
+  });
 }
 
 function generatePositionIntoCircle() {
@@ -235,10 +240,14 @@ function changePositionFinishLine($event: any) {
   </div>
   <div class="flex">
     <div class="flex-auto" id="map"></div>
-    <div class="w-1/3">
+    <div class="flex flex-col w-1/3 gap-2 px-1">
       <h1 class="text-2xl font-bold text-center">
         Estadísticas de la carrera
       </h1>
+
+      <button class="btn btn-primary" @click="addBot">
+        Agregar Bot
+      </button>
 
       <ul class="flex flex-col gap-2">
         <li v-for="(bot, index) in bots" class="flex flex-col border-b p-4 gap-2 relative">
