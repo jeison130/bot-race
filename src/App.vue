@@ -214,7 +214,20 @@ function changePositionFinishLine($event: any) {
 
       <ul class="flex flex-col gap-8">
         <li v-for="(bot, index) in bots" class="flex gap-4 justify-between border-b p-4">
-          <span class="flex items-center text-center bg-primary text-primary-content px-5 py-2 font-bold text-3xl">
+          <span
+              :class="{
+            flex: true,
+            'items-center': true,
+            'text-center': true,
+            'text-primary-content': true,
+            'px-5': true,
+            'py-2': true,
+            'font-bold': true,
+            'text-3xl': true,
+            'bg-error': index === (bots.length - 1),
+            'bg-success': index === 0,
+            'bg-warning': index !== 0 && index !== (bots.length - 1),
+          }">
             {{ index + 1 }}
           </span>
 
