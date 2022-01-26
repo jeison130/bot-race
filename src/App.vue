@@ -28,6 +28,7 @@ const getRandomIntFromIntervalService = new GetRandomIntFromIntervalService();
 let googleMaps: google;
 let map: any = null;
 let finishLineMarker = null;
+let infoWindow: any = null;
 
 const center = {
   lat: 1.1478853,
@@ -87,6 +88,10 @@ onMounted(async () => {
     center: finishLinePosition,
     radius: 2450,
     editable: true,
+  });
+
+  infoWindow = new googleMaps.maps.InfoWindow({
+    content: ' ',
   });
 
   setTimeout(() => {
@@ -275,6 +280,10 @@ function changePositionFinishLine($event: any) {
   map.setCenter(position);
 }
 
+function showInfo(bot: BotModel) {
+  infoWindow.setContent(bot.name);
+  infoWindow.open(map, bot.marker);
+}
 
 </script>
 
@@ -306,10 +315,22 @@ function changePositionFinishLine($event: any) {
 
       <div class="overflow-y-auto bg-base-100 drawer-rigth">
         <div v-if="!raceHasStared" class="flex flex-col gap-2 p-3 md:p-4 h-full">
-          <h1 class="text-2xl font-bold text-center">Bienvenidos a la carrera de bots</h1>
+          <div class="flex flex-row justify-between items-center">
+            <h1 class="text-2xl font-bold text-center">
+              Bienvenidos a la carrera de bots
+            </h1>
+
+            <label for="my-drawer-2" class="mb-4 btn btn-ghost btn-square drawer-button lg:hidden">
+              <svg class="inline-block w-6 h-6 stroke-current" viewBox="0 0 20 20">
+                <path fill="none"
+                      d="M15.898,4.045c-0.271-0.272-0.713-0.272-0.986,0l-4.71,4.711L5.493,4.045c-0.272-0.272-0.714-0.272-0.986,0s-0.272,0.714,0,0.986l4.709,4.711l-4.71,4.711c-0.272,0.271-0.272,0.713,0,0.986c0.136,0.136,0.314,0.203,0.492,0.203c0.179,0,0.357-0.067,0.493-0.203l4.711-4.711l4.71,4.711c0.137,0.136,0.314,0.203,0.494,0.203c0.178,0,0.355-0.067,0.492-0.203c0.273-0.273,0.273-0.715,0-0.986l-4.711-4.711l4.711-4.711C16.172,4.759,16.172,4.317,15.898,4.045z"></path>
+              </svg>
+            </label>
+          </div>
+
           <p class="text-xl font-extralight">
             Para iniciar la carrera, mueva el puntero <img :src="finishLineImage" class="inline w-6"> para indicar la
-            linea de meta, la cual deberan llegar los bots
+            línea de meta, tambien puedes ampliar o reducir el area de juego marcada por el circulo rojo.
           </p>
 
           <button class="btn bg-neutral mt-2" :disabled="loadingMap || startingRace" @click="startRace">
@@ -349,7 +370,9 @@ function changePositionFinishLine($event: any) {
           </button>
 
           <ul class="flex flex-col gap-2 pl-0">
-            <li v-for="(bot, index) in bots" class="flex flex-col border-b py-4 gap-2 relative">
+            <li v-for="(bot, index) in bots"
+                class="flex flex-col border-b py-4 px-2 gap-2 relative hover:bg-neutral hover:bg-opacity-10 cursor-pointer"
+                @click="showInfo(bot)">
               <div v-if="bot.battery === 0" class="absolute left-0 right-0 ml-auto mr-auto w-48 h-10 font-bold text-xl">
                 Regarcando {{ bot.batteryRecoveryTime + 1 }}
               </div>
