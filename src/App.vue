@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import {Loader, LoaderOptions, google} from 'google-maps';
-import {onMounted} from 'vue';
+import {onMounted, reactive} from 'vue';
 import finishLineImage from './assets/finishLine.png';
 import {GetCurrentPositionService} from './services/getCurrentPosition.service';
 import {GetDistanceBetweenPointsService} from './services/getDistanceBetweenPoints.service';
+import {BotModel} from './models/bot.model';
+import faker from 'faker';
 
 const getCurrentPositionService = new GetCurrentPositionService();
 const getDistanceBetweenPointsService = new GetDistanceBetweenPointsService();
@@ -11,6 +13,11 @@ const getDistanceBetweenPointsService = new GetDistanceBetweenPointsService();
 let googleMaps: google;
 let map: any = null;
 let finishLineMarker = null;
+const minInitialBot = 5;
+const maxInitialBot = 10;
+const minDistanceForRace = 1000;
+const minDistanceTraveled = 50;
+const maxDistanceTraveled = 100;
 
 const center = {
   lat: 1.1478853,
@@ -21,10 +28,7 @@ let finishLinePosition = {
 };
 let finishLineCircle: any = null;
 
-const botMarkers = [];
-const minInitialBot = 5;
-const maxInitialBot = 10;
-const minDistanceForRace = 1000;
+const bots: BotModel[] = reactive([]);
 
 onMounted(async () => {
   try {
@@ -71,8 +75,65 @@ onMounted(async () => {
 
   setTimeout(() => {
     generateBotMarkers();
+    recalculatePositions();
+    moveBots();
   }, 100);
 });
+
+function moveBots() {
+  setInterval(() => {
+    console.log('iniciando a mover');
+    bots.forEach((bot) => {
+      const {marker, distance} = bot;
+
+      const start = {
+        lat: marker.position.lat(),
+        lng: marker.position.lng(),
+      };
+      const end = finishLinePosition;
+
+      const n = distance / 50;
+
+      let lat: number;
+      let lng: number;
+
+      let coordinates: any[] = [];
+
+      for (let i = n - 1; i > 0; i--) {
+        coordinates.push({
+          lat: start.lat * i / n + end.lat * (n - i) / n,
+          lng: start.lng * i / n + end.lng * (n - i) / n,
+        });
+      }
+
+      lat = coordinates[0].lat;
+      lng = coordinates[0].lng;
+      marker.setPosition(new googleMaps.maps.LatLng(lat, lng));
+
+      bot.distance = getDistanceBetweenPointsService.run(
+          finishLinePosition.lat,
+          finishLinePosition.lng,
+          marker.position.lat(),
+          marker.position.lng(),
+      );
+
+    });
+    recalculatePositions();
+
+    console.log('Terminando de mover');
+  }, 1000);
+}
+
+function recalculatePositions() {
+  bots.sort((botA, botB) => {
+    const distanceA = botA.distance;
+    const distanceB = botB.distance;
+
+    if (distanceA < distanceB) return -1;
+    if (distanceA > distanceB) return 1;
+    return 0;
+  });
+}
 
 function randomIntFromInterval(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -84,10 +145,15 @@ function generateBotMarkers() {
   for (let i = 0; i < numberBots; i++) {
     const position = generatePositionIntoCircle();
 
-    botMarkers[i] = new googleMaps.maps.Marker({
-      map: map,
-      position,
-    });
+    bots[i] = {
+      name: faker.name.findName(),
+      distance: getDistanceBetweenPointsService.run(finishLinePosition.lat, finishLinePosition.lng, position.lat(), position.lng()),
+      marker: new googleMaps.maps.Marker({
+        map: map,
+        position,
+        title: 'Bot ' + i + 1,
+      }),
+    };
   }
 }
 
@@ -135,7 +201,39 @@ function changePositionFinishLine($event: any) {
   <div>
     Prueba
   </div>
-  <div id="map"></div>
+  <div class="flex">
+    <div class="flex-auto" id="map"></div>
+    <div class="w-1/3">
+      <h1 class="text-2xl font-bold text-center">
+        Estadísticas de la carrera
+      </h1>
+
+      <ul class="flex flex-col gap-8">
+        <li v-for="(bot, index) in bots" class="flex gap-4 justify-between border-b p-4">
+          <span class="flex items-center text-center bg-primary text-primary-content px-5 py-2 font-bold text-3xl">
+            {{ index + 1 }}
+          </span>
+
+          <div class="flex flex-col">
+            <span class="text-xl">
+              {{ bot.name.split(' ')[0] }}
+            </span>
+            <span class="text-2xl font-bold">{{ bot.name.split(' ')[1] }}</span>
+          </div>
+
+          <div class="flex flex-col text-right">
+            <span class="text-xs">
+              Distancia restante
+            </span>
+            <span class="text-3xl font-bold">
+              {{ Math.round(bot.distance) }} <span class="text-xs">mts</span>
+            </span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
 </template>
 
 <style>

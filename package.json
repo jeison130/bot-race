@@ -8,10 +8,12 @@
   },
   "dependencies": {
     "daisyui": "^1.25.3",
+    "faker": "^5.5.3",
     "google-maps": "^4.3.3",
     "vue": "^3.2.25"
   },
   "devDependencies": {
+    "@types/faker": "^6.6.9",
     "@vitejs/plugin-vue": "^2.0.0",
     "autoprefixer": "^10.4.2",
     "postcss": "^8.4.5",
