@@ -21,6 +21,9 @@ const maxInitialBot = 5;
 const minDistanceForRace = 1000;
 const minDistanceTraveled = 50;
 const maxDistanceTraveled = 100;
+const maxBattery = 100;
+const minBatteryConsumption = 10;
+const maxBatteryConsumption = 30;
 
 const center = {
   lat: 1.1478853,
@@ -86,7 +89,7 @@ onMounted(async () => {
 function moveBots() {
   setInterval(() => {
     bots.forEach((bot) => {
-      const {marker, distance} = bot;
+      const {marker, distance, battery} = bot;
 
       const start = {
         lat: marker.position.lat(),
@@ -95,6 +98,20 @@ function moveBots() {
       const end = finishLinePosition;
 
       let randomDistance = getRandomIntFromIntervalService.run(minDistanceTraveled, maxDistanceTraveled);
+
+      //Battery consumption
+      let batteryConsumption = getRandomIntFromIntervalService.run(minBatteryConsumption, maxBatteryConsumption);
+
+      if (batteryConsumption > bot.battery) {
+        batteryConsumption = bot.battery;
+      }
+
+      bot.battery -= batteryConsumption;
+
+      // Check battery
+      if (bot.battery === 0) {
+        bot.battery = maxBattery;
+      }
 
       if (distance < randomDistance) {
         marker.setPosition(new googleMaps.maps.LatLng(end.lat, end.lng));
@@ -157,6 +174,7 @@ function generateBotMarkers() {
         position,
         title: 'Bot ' + i + 1,
       }),
+      battery: maxBattery,
     };
   }
 }
@@ -212,10 +230,11 @@ function changePositionFinishLine($event: any) {
         Estadísticas de la carrera
       </h1>
 
-      <ul class="flex flex-col gap-8">
-        <li v-for="(bot, index) in bots" class="flex gap-4 justify-between border-b p-4">
-          <span
-              :class="{
+      <ul class="flex flex-col gap-2">
+        <li v-for="(bot, index) in bots" class="flex flex-col border-b p-4 gap-2">
+          <div class="flex gap-4 justify-between">
+            <span
+                :class="{
             flex: true,
             'items-center': true,
             'text-center': true,
@@ -231,21 +250,24 @@ function changePositionFinishLine($event: any) {
             {{ index + 1 }}
           </span>
 
-          <div class="flex flex-col">
+            <div class="flex flex-col">
             <span class="text-xl">
               {{ bot.name.split(' ')[0] }}
             </span>
-            <span class="text-2xl font-bold">{{ bot.name.split(' ')[1] }}</span>
-          </div>
+              <span class="text-2xl font-bold">{{ bot.name.split(' ')[1] }}</span>
+            </div>
 
-          <div class="flex flex-col text-right">
+            <div class="flex flex-col text-right">
             <span class="text-xs">
               Distancia restante
             </span>
-            <span class="text-3xl font-bold">
+              <span class="text-2xl font-bold">
               {{ Math.round(bot.distance) }} <span class="text-xs">mts</span>
             </span>
+            </div>
           </div>
+
+          <progress class="progress progress-primary" :value="bot.battery" :max="maxBattery"></progress>
         </li>
       </ul>
     </div>
