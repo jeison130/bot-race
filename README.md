@@ -9,7 +9,7 @@ Debes cumplir con cada uno de los siguientes puntos:
 
 1. ✅ La interfaz debe mostrar un mapa de Google Maps y un recuadro donde se listan los bots. El número inicial de bots que empiezan en la competencia debe ser un número aleatorio entre 5 y 10.
 2. ✅ Los bots se mueven en dirección al punto marcado por el usuario como meta. Cada bot solo puede hacer un movimiento cada 1 segundo de una distancia aleatoria entre 50 y 100 metros.
-3. Cada bot tiene una batería que dura 100 unidades, y cada cambio de posición gasta un número aleatorio entre 10 y 30 unidades.
+3. ✅ Cada bot tiene una batería que dura 100 unidades, y cada cambio de posición gasta un número aleatorio entre 10 y 30 unidades.
 4. Cuando un bot quede sin batería debe detenerse por 6 segundos para volver a empezar con 100 unidades.
 5. Se debe mostrar un botón “Agregar nuevo Bot”, que al presionarse incrementa en 1 el número de bots en competencia. Al agregarse, se ubica de manera aleatoria en la ciudad y de inmediato inicia su trayecto a la meta
 6. La interfaz debe mostrar de manera fácil el estado de toda la competencia, estado de los bots, posición de cada uno, distancia hacia la meta y todo lo que considere útil para el usuario

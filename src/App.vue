@@ -8,6 +8,16 @@ import {GetCurrentPositionService} from './services/getCurrentPosition.service';
 import {GetDistanceBetweenPointsService} from './services/getDistanceBetweenPoints.service';
 import {GetRandomIntFromIntervalService} from './services/getRandomIntFromInterval.service';
 import {BotModel} from './models/bot.model';
+import {
+  maxBatteryConsumption,
+  minDistanceTraveled,
+  minInitialBot,
+  maxDistanceTraveled,
+  maxInitialBot,
+  minBatteryConsumption,
+  minDistanceForRace,
+  maxBattery,
+} from './constants';
 
 const getCurrentPositionService = new GetCurrentPositionService();
 const getDistanceBetweenPointsService = new GetDistanceBetweenPointsService();
@@ -16,14 +26,6 @@ const getRandomIntFromIntervalService = new GetRandomIntFromIntervalService();
 let googleMaps: google;
 let map: any = null;
 let finishLineMarker = null;
-const minInitialBot = 3;
-const maxInitialBot = 5;
-const minDistanceForRace = 1000;
-const minDistanceTraveled = 50;
-const maxDistanceTraveled = 100;
-const maxBattery = 100;
-const minBatteryConsumption = 10;
-const maxBatteryConsumption = 30;
 
 const center = {
   lat: 1.1478853,
