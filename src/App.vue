@@ -1,14 +1,17 @@
 <script setup lang="ts">
+// @ts-ignore
+import faker from 'faker';
 import {Loader, LoaderOptions, google} from 'google-maps';
 import {onMounted, reactive} from 'vue';
 import finishLineImage from './assets/finishLine.png';
 import {GetCurrentPositionService} from './services/getCurrentPosition.service';
 import {GetDistanceBetweenPointsService} from './services/getDistanceBetweenPoints.service';
+import {GetRandomIntFromIntervalService} from './services/getRandomIntFromInterval.service';
 import {BotModel} from './models/bot.model';
-import faker from 'faker';
 
 const getCurrentPositionService = new GetCurrentPositionService();
 const getDistanceBetweenPointsService = new GetDistanceBetweenPointsService();
+const getRandomIntFromIntervalService = new GetRandomIntFromIntervalService();
 
 let googleMaps: google;
 let map: any = null;
@@ -91,8 +94,8 @@ function moveBots() {
         lng: marker.position.lng(),
       };
       const end = finishLinePosition;
-
-      const n = distance / 50;
+      const randomDistance = getRandomIntFromIntervalService.run(minDistanceTraveled, maxDistanceTraveled);
+      const n = distance / randomDistance;
 
       let lat: number;
       let lng: number;
@@ -135,12 +138,8 @@ function recalculatePositions() {
   });
 }
 
-function randomIntFromInterval(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
 function generateBotMarkers() {
-  const numberBots = randomIntFromInterval(minInitialBot, maxInitialBot);
+  const numberBots = getRandomIntFromIntervalService.run(minInitialBot, maxInitialBot);
 
   for (let i = 0; i < numberBots; i++) {
     const position = generatePositionIntoCircle();
