@@ -2,7 +2,7 @@
 // @ts-ignore
 import faker from 'faker';
 import {Loader, LoaderOptions, google} from 'google-maps';
-import {onMounted, reactive} from 'vue';
+import {onMounted, reactive, ref} from 'vue';
 import finishLineImage from './assets/finishLine.png';
 import {GetCurrentPositionService} from './services/getCurrentPosition.service';
 import {GetDistanceBetweenPointsService} from './services/getDistanceBetweenPoints.service';
@@ -38,6 +38,7 @@ let finishLinePosition = {
 let finishLineCircle: any = null;
 
 let bots: BotModel[] = reactive([]);
+let loadingMap = ref(true);
 
 onMounted(async () => {
   try {
@@ -83,6 +84,7 @@ onMounted(async () => {
   });
 
   setTimeout(() => {
+    loadingMap.value = false;
     generateBotMarkers();
     recalculatePositions();
     moveBots();
@@ -235,26 +237,56 @@ function changePositionFinishLine($event: any) {
 </script>
 
 <template>
-  <div>
-    Prueba
-  </div>
-  <div class="flex">
-    <div class="flex-auto" id="map"></div>
-    <div class="flex flex-col w-1/3 gap-2 px-1">
-      <h1 class="text-2xl font-bold text-center">
-        Estadísticas de la carrera
-      </h1>
+  <div class="shadow bg-base-200 drawer drawer-mobile drawer-end">
+    <input id="my-drawer-2" type="checkbox" class="drawer-toggle">
+    <div class="drawer-content">
+      <div class="navbar mb-2 shadow-lg bg-neutral text-neutral-content app-bar">
+        <div class="flex justify-center flex-1 px-2 mx-2 text-lg font-bold w-full">
+          Bot Race
+        </div>
+        <div class="mt-auto">
+          <label for="my-drawer-2" class="mb-4 btn btn-ghost btn-square drawer-button lg:hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 class="inline-block w-6 h-6 stroke-current">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </label>
+        </div>
+      </div>
 
-      <button class="btn btn-primary" @click="addBot">
-        Agregar Bot
-      </button>
+      <div v-if="loadingMap" class="flex justify-center items-center map">
+        <div class="spinner"></div>
+      </div>
+      <div class="map" id="map"></div>
+    </div>
+    <div class="drawer-side">
+      <label for="my-drawer-2" class="drawer-overlay"></label>
 
-      <ul class="flex flex-col gap-2">
-        <li v-for="(bot, index) in bots" class="flex flex-col border-b p-4 gap-2 relative">
-          <div v-if="bot.battery === 0" class="absolute left-0 right-0 ml-auto mr-auto w-48 h-10 font-bold text-xl">
-            Regarcando {{ bot.batteryRecoveryTime + 1 }}
-          </div>
-          <div :class="{
+      <div class="flex flex-col gap-2 p-3 md:p-4 overflow-y-auto bg-base-100">
+
+        <div class="flex flex-row justify-between items-center">
+          <h1 class="text-xl font-bold text-center">
+            Estadísticas de la carrera
+          </h1>
+
+          <label for="my-drawer-2" class="mb-4 btn btn-ghost btn-square drawer-button lg:hidden">
+            <svg class="inline-block w-6 h-6 stroke-current" viewBox="0 0 20 20">
+              <path fill="none"
+                    d="M15.898,4.045c-0.271-0.272-0.713-0.272-0.986,0l-4.71,4.711L5.493,4.045c-0.272-0.272-0.714-0.272-0.986,0s-0.272,0.714,0,0.986l4.709,4.711l-4.71,4.711c-0.272,0.271-0.272,0.713,0,0.986c0.136,0.136,0.314,0.203,0.492,0.203c0.179,0,0.357-0.067,0.493-0.203l4.711-4.711l4.71,4.711c0.137,0.136,0.314,0.203,0.494,0.203c0.178,0,0.355-0.067,0.492-0.203c0.273-0.273,0.273-0.715,0-0.986l-4.711-4.711l4.711-4.711C16.172,4.759,16.172,4.317,15.898,4.045z"></path>
+            </svg>
+          </label>
+        </div>
+
+        <button class="btn bg-neutral" @click="addBot">
+          Agregar Bot
+        </button>
+
+        <ul class="flex flex-col gap-2 pl-0">
+          <li v-for="(bot, index) in bots" class="flex flex-col border-b py-4 gap-2 relative">
+            <div v-if="bot.battery === 0" class="absolute left-0 right-0 ml-auto mr-auto w-48 h-10 font-bold text-xl">
+              Regarcando {{ bot.batteryRecoveryTime + 1 }}
+            </div>
+            <div :class="{
             'flex':true,
              'gap-4': true,
              'justify-between': true,
@@ -278,34 +310,63 @@ function changePositionFinishLine($event: any) {
             {{ index + 1 }}
           </span>
 
-            <div class="flex flex-col">
+              <div class="flex flex-col">
             <span class="text-xl">
               {{ bot.name.split(' ')[0] }}
             </span>
-              <span class="text-2xl font-bold">{{ bot.name.split(' ')[1] }}</span>
-            </div>
+                <span class="text-2xl font-bold">{{ bot.name.split(' ')[1] }}</span>
+              </div>
 
-            <div class="flex flex-col text-right">
+              <div class="flex flex-col text-right">
             <span class="text-xs">
               Distancia restante
             </span>
-              <span class="text-2xl font-bold">
+                <span class="text-2xl font-bold">
               {{ Math.round(bot.distance) }} <span class="text-xs">mts</span>
             </span>
+              </div>
             </div>
-          </div>
 
-          <progress class="progress progress-primary" :value="bot.battery" :max="maxBattery"></progress>
-        </li>
-      </ul>
+            <progress class="progress progress-primary" :value="bot.battery" :max="maxBattery"></progress>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 
 </template>
 
 <style>
-#map {
+:root {
+  --heigth-app-bar: 3rem;
+}
+
+.app-bar {
+  height: var(--heigth-app-bar);
+}
+
+.map {
   width: 100%;
-  height: calc(100vh - 100px)
+  height: calc(100vh - var(--heigth-app-bar));
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #09f;
+
+  animation: spin 1s ease infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
