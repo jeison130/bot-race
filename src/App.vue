@@ -317,11 +317,11 @@ function changePositionFinishLine($event: any) {
           </button>
 
           <div v-if="startingRace" class="flex flex-col justify-center items-center text-2xl h-full">
-            <span class="">
+            <span class="font-extralight">
               Iniciando la carrera
             </span>
-            <span class="countdown font-bold">
-              <span :style="{'--value':counterInitRace}"></span>
+            <span class="font-bold">
+              {{ counterInitRace }}
             </span>
           </div>
         </div>
